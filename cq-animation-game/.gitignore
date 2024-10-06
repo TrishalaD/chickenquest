@@ -1,0 +1,20 @@
+# Eclipse specific files
+.project
+.classpath
+.settings/
+
+# Java specific files
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven specific files
+target/
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
