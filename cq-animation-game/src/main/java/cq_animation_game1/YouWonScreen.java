@@ -1,10 +1,11 @@
 package cq_animation_game1;
 
 import mayflower.*;
-public class YouWonScreen extends Actor
+import mayflower.*;
+public class YouWonScreen extends World
 {
     public YouWonScreen(){
-        setImage(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\BG\\you-win1.png");
+        setBackground(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\BG\\you-win1.png");
     }
     
     public void act(){
@@ -12,3 +13,4 @@ public class YouWonScreen extends Actor
     }
     
 }
+

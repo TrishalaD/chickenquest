@@ -7,59 +7,77 @@ public class MyWorld extends World
 {
 
     private Cat cat;
-    private GameOverScreen gameOver;
-    private YouWonScreen youWon;
-    private Yarn chickenTemp;
-    private Bomb bomb;
-    private Flag flag;
-    int timer = 150;
+    private Chicken enemy;
     
+    TitleScreenPeter peterdance;
     private Block block;
     TitleScreen thing;
     public int[][] tilesGrid;
     public Block[][] tilesObject;
-    public Yarn[][] tilesChickenTemp;
-    public Flag[][] tilesFlag;
     public int xScroll;
     public int yScroll;
-    private int cometSpawnTimer;
-    private int currentWorld = 1;
+    public Chicken[] enemies;
+    public BeamLaser laser;
     public boolean hasStarted;
-
-    public MyWorld() 
+    private boolean transitionedToGameOver;
+    private boolean transitionedToYouWon;
+    private Flag flag;
+    GameOverScreen gameOver;
+    public Yarn[][] tilesYarn;
+    public Flag[][] tileFlag;
+    private Yarn yarn;
+    public Flag[][] tilesFlag;
+    public static int worldNum;
+    public int createCometTimer;
+    public static boolean touchedRedBull;
+    private RedBullPeter redbullpeter;
+    public MyWorld(int world) 
     {
         hasStarted = false;
-        thing = new TitleScreen();
-        gameOver = new GameOverScreen();
-        youWon = new YouWonScreen();
-        setBackground(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\BG\\World1.jpg");
-        addObject(thing,0,0);
-        cometSpawnTimer = 0;
-        tilesFlag = new Flag[20][100];
-
+        worldNum = world;
+        cat = new Cat();
+        createCometTimer = 0;
+        
+        if(worldNum == 1)
+        {
+             thing = new TitleScreen();
+             setBackground(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\BG\\World1.jpg");
+             addObject(thing,0,0);
+             peterdance = new TitleScreenPeter();
+             addObject(peterdance,900,650);
+        }
+        else
+        {
+            startGame(worldNum);
+        }
+        
     }
     
     public void startGame(int world)
     {
-    	this.currentWorld = world;
-        if(world == 1)
+        if(worldNum == 1)
         {
            world1(); 
         }
-        if(world == 2)
+        if(worldNum == 2)
         {
            world2(); 
         }
-        if(world == 3)
+        if(worldNum == 3)
         {
            world3(); 
         }
-     
-        gatherTiles();
         
-        changeConnections();
+        tilesYarn = new Yarn[60][100];
+        tileFlag = new Flag[60][100];
         
+        removeObject(peterdance);
+        redbullpeter = new RedBullPeter();
+        addObject(redbullpeter, 0, 0);
         cat = new Cat();
+        addRandomObjects();
+        gatherTiles();
+        changeConnections();
         addObject(cat, 700, 300);
         
         // dog = new Dog();
@@ -77,36 +95,53 @@ public class MyWorld extends World
         // addObject(block, 528, 372);
         
         Mayflower.showBounds(false);
-        showText("Score: " + cat.getScore() + " Health: " + cat.getHealth(), 10, 30, Color.BLACK);
     }
     
     public void act()
     {
-        if(thing.start && !hasStarted)
+        if(worldNum == 1)
         {
-            startGame(3);
-            hasStarted = true;
+            if(thing.start && !hasStarted)
+            {
+                worldNum = 1;
+                startGame(1);
+                hasStarted = true;
+            }
+            else if(thing.start)
+            {
+                scrollScreen();
+            }
         }
-        else if(thing.start)
-        {            
+        else
+        {
             scrollScreen();
-            if(cat.getY() > 900 || cat.getHealth()==0){
-                addObject(gameOver,-180, -150);
-            }else if(cat.hasFinishedGame()){
-                addObject(youWon,0, 0);            
-            }
         }
         
-        if (currentWorld == 3 && cat.getY() < 900 && cat.getHealth() > 0 && !cat.hasFinishedGame()) {
-			     
-        	cometSpawnTimer++;
-            // Every 80 frames, spawn a new comet
-            if (cometSpawnTimer >= 80) {
-                spawnComet();
-                cometSpawnTimer = 0;
-            }
-        }		
+        if(worldNum == 3 && cat.getY() < 900 && cat.getHealth() > 0 && !cat.hasFinishedGame()){
+                createCometTimer++;
+                // Every 80 frames, create a new comet
+                if (createCometTimer >= 80) {
+                    createComet();
+                    createCometTimer = 0;
+                }
+        }
         
+        shoot();
+        
+        if(yScroll < -300)
+        {
+            //System.out.println(cat.getY());
+            transitionToGameOver();
+        }
+        else if(cat.hasFinishedGame() && worldNum == 3)
+        {
+            transitionToYouWon();            
+        }
+        else if(cat.hasFinishedGame())
+        {
+            worldNum ++;
+            Mayflower.setWorld(new MyWorld(worldNum));
+        }
     }
     
     
@@ -120,7 +155,7 @@ public class MyWorld extends World
             {
                 for(int c = 0; c < tilesGrid[0].length; c ++)
                 {
-                    if(tilesGrid[r][c] == 1 || tilesGrid[r][c] == 2 || tilesGrid[r][c] == 3)
+                    if(tilesGrid[r][c] == 1 || tilesGrid[r][c] == 2|| tilesGrid[r][c] == 3)
                     {
                         // this.removeObject(tilesObject[r][c]);
                         // block = new Block();
@@ -130,16 +165,12 @@ public class MyWorld extends World
                     }
                     if(tilesGrid[r][c] == 5)
                     {
-                        // this.removeObject(tilesObject[r][c]);
-                        // block = new Block();
-                        // tilesObject[r][c] = block;
-                        // addObject(block, c * 128 + xScroll, 900 - (r * 128) - 128);
-                        tilesChickenTemp[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
+                        
+                        tilesYarn[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
                     }
                     if(tilesGrid[r][c] == 8){
-                        tilesFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
+                        tileFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
                     }
-                    
                 }
                 
             }
@@ -166,17 +197,12 @@ public class MyWorld extends World
                     }
                     if(tilesGrid[r][c] == 5)
                     {
-                        // this.removeObject(tilesObject[r][c]);
-                        // block = new Block();
-                        // tilesObject[r][c] = block;
-                        // addObject(block, c * 128 + xScroll, 900 - (r * 128) - 128);
-                        tilesChickenTemp[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
+                        
+                        tilesYarn[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
                     }
-                    if(tilesGrid[r][c] == 8)
-                    {
-                        tilesFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
+                    if(tilesGrid[r][c] == 8){
+                        tileFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
                     }
-                    
                 }
                 
             }
@@ -202,16 +228,12 @@ public class MyWorld extends World
                     }
                     if(tilesGrid[r][c] == 5)
                     {
-                        // this.removeObject(tilesObject[r][c]);
-                        // block = new Block();
-                        // tilesObject[r][c] = block;
-                        // addObject(block, c * 128 + xScroll, 900 - (r * 128) - 128);
-                        tilesChickenTemp[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
+                        
+                        tilesYarn[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
                     }
                     if(tilesGrid[r][c] == 8){
-                        tilesFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
+                        tileFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
                     }
-                    
                 }
                 
             }
@@ -219,7 +241,7 @@ public class MyWorld extends World
             
             
         }
-        else if(cat.getY() > 600 && cat.getY() < 680)
+        else if(cat.getY() > 600)
         {
             yScroll += cat.getYVelocity();
             cat.setLocation(cat.getX(),600);
@@ -237,16 +259,13 @@ public class MyWorld extends World
                     }
                     if(tilesGrid[r][c] == 5)
                     {
-                        // this.removeObject(tilesObject[r][c]);
-                        // block = new Block();
-                        // tilesObject[r][c] = block;
-                        // addObject(block, c * 128 + xScroll, 900 - (r * 128) - 128);
-                        tilesChickenTemp[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
+                        
+                        tilesYarn[r][c].setPlace( c * 128 + xScroll, 900 - (r * 128) + yScroll - 128);
                     }
-                    if(tilesGrid[r][c] == 8){
-                        tilesFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
+                    if(tilesGrid[r][c] == 8)
+                    {
+                        tileFlag[r][c].setPlace(c * 130 + xScroll, 900 - (r * 128) + yScroll - 58); 
                     }
-                    
                 }
                 
             }
@@ -254,6 +273,10 @@ public class MyWorld extends World
             
             
         }
+        // for(int i = 0; i < enemies.length; i ++)
+        // {
+            // enemies[i].setPlace(enemies[i].getX() + cat.getXVelocity(), enemies[i].getY() + cat.getYVelocity());
+        // }
     }
     
     public void gatherTiles()
@@ -280,23 +303,25 @@ public class MyWorld extends World
                 }
                 else if(tilesGrid[r][c] == 3)
                 {
-                    block = new RockBlock();
+                    block = new RedBull();
                     tilesObject[r][c] = block;
                     addObject(block, c * 128, 900 - (r * 128) - 128);
-                    
-                    
+                
                 }
-                else if(tilesGrid[r][c] == 5)
+                if(tilesGrid[r][c] == 5)
                 {
-                    chickenTemp = new Yarn();
-                    tilesChickenTemp[r][c] = chickenTemp;
-                    addObject(chickenTemp, c * 128, 900 - (r * 128) - 128);
+                    yarn = new Yarn();
+                    tilesYarn[r][c] = yarn;
+                   
+                    
+                    addObject(yarn, c * 128, 900 - (r * 128) - 128);
                 }
-                else if(tilesGrid[r][c] == 8)
+                if(tilesGrid[r][c] == 8)
                 {
                     flag = new Flag();
-                    tilesFlag[r][c] = flag;
+                    tileFlag[r][c] = flag;
                     addObject(flag, c * 128, 900 - (r * 128) - 58); 
+                    System.out.println("hi123");
                 }
             }
             
@@ -310,12 +335,16 @@ public class MyWorld extends World
             for(int c = 1; c < tilesGrid[0].length - 1; c ++)
             {
                 if(tilesGrid[r][c] == 1)
-                {                 
+                {
                     
-                    tilesObject[r][c].connect(0, tilesGrid[r + 1][c]);
-                    tilesObject[r][c].connect(1, tilesGrid[r - 1][c]);
-                    tilesObject[r][c].connect(2, tilesGrid[r][c + 1]);
-                    tilesObject[r][c].connect(3, tilesGrid[r][c - 1]);
+                    if(tilesGrid[r + 1][c] != 5 && tilesGrid[r + 1][c] != 3 )
+                        tilesObject[r][c].connect(0, tilesGrid[r + 1][c]);
+                    if(tilesGrid[r - 1][c] != 5 && tilesGrid[r - 1][c] != 3)
+                        tilesObject[r][c].connect(1, tilesGrid[r - 1][c]);
+                    if(tilesGrid[r][c + 1] != 5 && tilesGrid[r][c + 1] != 3)
+                        tilesObject[r][c].connect(2, tilesGrid[r][c + 1]);
+                    if(tilesGrid[r][c - 1] != 5 && tilesGrid[r][c - 1] != 3)
+                        tilesObject[r][c].connect(3, tilesGrid[r][c - 1]);
                     tilesObject[r][c].updateConnect();
                 }
                 
@@ -337,12 +366,31 @@ public class MyWorld extends World
         
         tilesGrid = new int[60][100];
         tilesObject = new Block[60][100];
-        tilesChickenTemp = new Yarn[20][100];
         xScroll = 0;
         yScroll = 0;
         
+        enemies = new Chicken[5];
         
+        enemy = new Chicken();
+        enemies[0] = enemy;
+        addObject(enemy, 128 * 2, 128 * 2);
         
+        enemy = new Chicken();
+        enemies[1] = enemy;
+        addObject(enemy, 128 * 6, 128 * 2);
+        
+        enemy = new Chicken();
+        enemies[2] = enemy;
+        addObject(enemy, 128 * 7, 128 * 4);
+        
+        enemy = new Chicken();
+        enemies[3] = enemy;
+        addObject(enemy, 128 * 13, 128 * 9);
+        
+        enemy = new Chicken();
+        enemies[4] = enemy;
+        addObject(enemy, 128 * 18, 128 * 9);
+        tilesGrid[3][31] = 3;
         for(int i = 0; i < 68; i++)
         {
             tilesGrid[0][i] = 1;
@@ -450,9 +498,7 @@ public class MyWorld extends World
                 
             }
         }
-        
-        addRandomObjects();
-
+        tilesGrid[2][48] = 8;
     }
         
     
@@ -467,14 +513,40 @@ public class MyWorld extends World
         
         removeObject(thing);
         
-        tilesGrid = new int[20][100];
-        tilesObject = new Block[20][100];
-        tilesChickenTemp = new Yarn[20][100];
-        tilesFlag = new Flag[20][100];
+        tilesGrid = new int[60][100];
+        tilesObject = new Block[60][100];
         xScroll = 0;
         yScroll = 0;
         
+        enemies = new Chicken[7];
         
+        enemy = new Chicken();
+        enemies[0] = enemy;
+        addObject(enemy, 128 * 2, 128 * 2);
+        
+        enemy = new Chicken();
+        enemies[1] = enemy;
+        addObject(enemy, 128 * 6, 128 * 2);
+        
+        enemy = new Chicken();
+        enemies[2] = enemy;
+        addObject(enemy, 128 * 7, 128 * 4);
+        
+        enemy = new Chicken();
+        enemies[3] = enemy;
+        addObject(enemy, 128 * 13, 128 * 9);
+        
+        enemy = new Chicken();
+        enemies[4] = enemy;
+        addObject(enemy, 128 * 18, 128 * 9);
+        
+        enemy = new Chicken();
+        enemies[5] = enemy;
+        addObject(enemy, 128 * 11, 128 * 6);
+        
+        enemy = new Chicken();
+        enemies[6] = enemy;
+        addObject(enemy, 128 * 7, 128 * 3);
         
         for(int i = 0; i < 8; i++)
         {
@@ -495,6 +567,7 @@ public class MyWorld extends World
             }
             
         }
+        tilesGrid[6][12] = 3;
         for(int i = 17; i < 19; i++)
         {
             tilesGrid[1][i] = 1;
@@ -584,7 +657,7 @@ public class MyWorld extends World
         {
             for(int j = 10; j < 13; j++)
             {
-                tilesGrid[j][i] = 2;
+                tilesGrid[j][i] = 0;
             
             }
             
@@ -593,7 +666,7 @@ public class MyWorld extends World
         {
             for(int j = 14; j < 18; j++)
             {
-                tilesGrid[j][i] = 2;
+                tilesGrid[j][i] = 0;
             
             }
             
@@ -602,7 +675,7 @@ public class MyWorld extends World
         {
             for(int j = 19; j < 23; j++)
             {
-                tilesGrid[j][i] = 2;
+                tilesGrid[j][i] = 0;
             
             }
             
@@ -611,7 +684,7 @@ public class MyWorld extends World
         {
             for(int j = 24; j < 30; j++)
             {
-                tilesGrid[j][i] = 2;
+                tilesGrid[j][i] = 0;
             
             }
             
@@ -634,13 +707,52 @@ public class MyWorld extends World
             }
             
         }
-        
-        addRandomObjects();
-        
+        tilesGrid[34][17] = 8;
     }
     
+    public void shoot()
+    {
+        if(cat.isHadoukenActive && cat.getTimer() == 1)
+        {
+            laser = new BeamLaser();
+            addObject(laser, cat.getX(), cat.getY());
+        }
+    }
     
-    	 
+    private void transitionToGameOver() {
+        gameOver = new GameOverScreen();
+        addObject(gameOver,-160, -120);        
+        transitionedToGameOver = true;
+    }
+    
+    private void transitionToYouWon() {
+        // Create a new instance of NewWorld
+        YouWonScreen youWon = new YouWonScreen();
+        
+        // Set the new world
+        Mayflower.setWorld(youWon);
+        
+        // Update transition flag to prevent repeated transitions
+        transitionedToYouWon = true;
+    }
+        public void addRandomObjects()
+    {
+        Random rand = new Random();
+        for (int r = 0; r < tilesGrid.length; r++) {
+            for (int c = 0; c < tilesGrid[r].length; c++) {
+                int randomValue = rand.nextInt(tilesGrid[0].length);
+                System.out.println(randomValue);
+                if(randomValue < 5 && tilesGrid[r][c] == 0){
+                    // int x = c * 115;
+                    // int y = 900 - (tilesGrid.length - r) * 119;
+                    // Yarn yarn = new Yarn();
+                    // addObject(yarn, x, y);
+                    // tilesGrid[r][c] = 10;
+                    tilesGrid[r][c] = 5;
+                }
+            }
+        }
+    } 
     public void world3()
     {
         setBackground(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\BG\\World3.png");
@@ -649,12 +761,15 @@ public class MyWorld extends World
         // addObject(w,0,0);
         // Detector d = new Detector();
         // addObject(d,643,634);
+        enemies = new Chicken[1];
+        enemy = new Chicken();
+        enemies[0] = enemy;
+        addObject(enemy, 128 * 2, 128 * 2);
         
-        removeObject(thing);
         
         tilesGrid = new int[60][100];
         tilesObject = new Block[60][100];
-        tilesChickenTemp = new Yarn[60][100];
+        tilesYarn = new Yarn[60][100];
         tilesFlag = new Flag[20][100];
         xScroll = 0;
         yScroll = 0;
@@ -706,30 +821,17 @@ public class MyWorld extends World
         {
             tilesGrid[i][37] = 1;
         }
+        
+        tilesGrid[5][12] = 3;
+        
         tilesGrid[19][37] = 8;
         addRandomObjects();
         
     }
-        
-    public void addRandomObjects()
-    {
-        Random rand = new Random();
-        for (int r = 1; r < tilesGrid.length-1; r++) {
-            for (int c = 1; c < tilesGrid[r].length-1; c++) {
-                int randomValue = rand.nextInt(tilesGrid[0].length);
-                if(randomValue < 5 && tilesGrid[r+1][c] != 1 && tilesGrid[r-1][c] != 1 && tilesGrid[r][c] != 1 && tilesGrid[r][c+1] != 1 && tilesGrid[r][c-1] != 1 && tilesGrid[r][c] != 2 && tilesGrid[r][c] != 3 && tilesGrid[r][c] != 8){
-                  tilesGrid[r][c] = 5;
-                }
-            }
-        }
-    }
     
-    public void spawnComet() {
-        //int speed = 40 + (int)(Math.random() * 5);  // Random speed between 5 and 10
-        //int angle = 45 + (int)(Math.random() * 15);  // Angle of 45 to 60 degrees
-        
-        int speed = 40;  // Random speed between 5 and 10
-        int angle = 45;
+    public void createComet() {
+        int speed = 40 + (int)(Math.random() * 5);  // Random speed between 40 and 45
+        int angle = 45 + (int)(Math.random() * 15);  // Angle of 45 to 60 degrees
         
         // Create a new comet with random speed and angle
         FallingComet comet = new FallingComet(speed, angle);
@@ -740,5 +842,4 @@ public class MyWorld extends World
         // Add comet to the world at random x position, starting from y = 0
         addObject(comet, startX, -100);
     }
-	 
 }

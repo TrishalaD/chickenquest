@@ -23,6 +23,11 @@ public class MovableAnimatedActor extends AnimatedActor
     private int yVelocity;
     private boolean isJumpingHigher;
     public MayflowerImage hitbox;
+    public int facing;
+    public BeamLaser laser;
+    private Animation hadouken;
+    private Animation climbRight;
+    private Animation climbLeft;
     /**
      * Constructor for objects of class MovableAnimatedActor
      */
@@ -34,14 +39,14 @@ public class MovableAnimatedActor extends AnimatedActor
         yVelocity = 0;
         isJumpingHigher = false;
         hitbox = new MayflowerImage(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\peterwalkforward\\Hitbox.png");
-        
+        facing = 1;
     }
 
     public void act()
     {
 
         newAction = null;
-        if(currentAction == null)
+        if(currentAction == null && isHadoukenActive == false && isRoadhouseActive == false)
         {
             newAction = "idle";
         }
@@ -49,7 +54,8 @@ public class MovableAnimatedActor extends AnimatedActor
         int y = getY();
         int w = getWidth();
         int h = getHeight();
-        if(Mayflower.isKeyDown(Keyboard.KEY_UP) && Mayflower.isKeyDown(Keyboard.KEY_RIGHT) && super.getCanJump())
+        
+        if(Mayflower.isKeyDown(Keyboard.KEY_UP) && Mayflower.isKeyDown(Keyboard.KEY_RIGHT) && super.getCanJump() && isHadoukenActive == false && isRoadhouseActive == false)
         {
             newAction = "fallRight";
             direction = "right";
@@ -57,7 +63,7 @@ public class MovableAnimatedActor extends AnimatedActor
             super.setYVelocity(8);
             super.setCanJump(false);
         }
-        else if(Mayflower.isKeyDown(Keyboard.KEY_UP) && Mayflower.isKeyDown(Keyboard.KEY_LEFT) && super.getCanJump())
+        else if(Mayflower.isKeyDown(Keyboard.KEY_UP) && Mayflower.isKeyDown(Keyboard.KEY_LEFT) && super.getCanJump()&& isHadoukenActive == false && isRoadhouseActive == false)
         {
             newAction = "fallLeft";
             direction = "left";
@@ -65,7 +71,7 @@ public class MovableAnimatedActor extends AnimatedActor
             super.setYVelocity(8);
             super.setCanJump(false);
         }
-        else if(Mayflower.isKeyDown(Keyboard.KEY_UP) && super.getCanJump())
+        else if(Mayflower.isKeyDown(Keyboard.KEY_UP) && super.getCanJump() && isHadoukenActive == false && isRoadhouseActive == false)
         {
             isJumpingHigher = true;
             if(direction != null && direction.equals("left"))
@@ -114,26 +120,34 @@ public class MovableAnimatedActor extends AnimatedActor
         else
         {
             newAction = "idle";
-            if(direction != null && direction.equals("left"))
-            {
-                newAction = "idleLeft";
-            }
-            if(!getCanJump())
+            if(isHadoukenActive == false && isRoadhouseActive == false)
             {
                 if(direction != null && direction.equals("left"))
                 {
-                    newAction = "fallLeft";
+                    newAction = "idleLeft";
                 }
-                else
+                if(!getCanJump())
                 {
-                    newAction = "fallRight";
+                    if(direction != null && direction.equals("left"))
+                    {
+                        newAction = "fallLeft";
+                    }
+                    else
+                    {
+                        newAction = "fallRight";
+                    }
                 }
+                
             }
+            
+        }
+        if(isHadoukenActive == false && isRoadhouseActive == false)
+        {
+            super.yMovement();
+            xMovement();
         }
         
-        super.yMovement();
-        xMovement();
-        if(!getCanJump())
+        if(!getCanJump() && isHadoukenActive == false && isRoadhouseActive == false)
         {
             if(direction != null && direction.equals("left"))
             {
@@ -144,7 +158,18 @@ public class MovableAnimatedActor extends AnimatedActor
                 newAction = "fallRight";
             }
         }
-        if(!newAction.equals(currentAction) && newAction != null)
+        
+        if(super.isClimbRight())
+        {
+            newAction = "climbRight";
+            
+        }
+        if(super.isClimbLeft())
+        {
+            newAction = "climbLeft";
+            System.out.println("REAL");
+        }
+        if(!newAction.equals(currentAction) && newAction != null && isHadoukenActive == false && isRoadhouseActive == false)
         {
 
             if(newAction.equals("idle"))
@@ -177,9 +202,19 @@ public class MovableAnimatedActor extends AnimatedActor
                 currentAction = newAction;
                 setAnimation(fallingLeft);
             }
+            else if(newAction.equals("climbRight"))
+            {
+                currentAction = newAction;
+                setAnimation(climbRight);
+            }
+            else if(newAction.equals("climbLeft"))
+            {
+                currentAction = newAction;
+                setAnimation(climbLeft);
+            }
         }
         
-        if(Mayflower.isKeyDown(Keyboard.KEY_UP) && isJumpingHigher)
+        if(Mayflower.isKeyDown(Keyboard.KEY_UP) && isJumpingHigher && isHadoukenActive == false && isRoadhouseActive == false)
         {
             
             
@@ -191,7 +226,9 @@ public class MovableAnimatedActor extends AnimatedActor
             isJumpingHigher = false;
             super.setJumpLength(0);
         }
-          
+        
+        // System.out.println("XVOL: " + getXVelocity() + "   YVOL: " + getYVelocity());
+        
         super.act();
     }
 
@@ -215,23 +252,45 @@ public class MovableAnimatedActor extends AnimatedActor
             super.setXVelocity(super.getXVelocity() - 1);
             
         }
-        if(isTouching(Block.class) || isTouching(IceBlock.class))
+        else if (Mayflower.isKeyDown(Keyboard.KEY_Z) && !currentAction.equals("hadouken" ) && isHadoukenActive == false && super.getCanJump() && isRoadhouseActive == false) {
+                    
+                    isHadoukenActive = true;
+                    newAction = "hadouken";
+                    currentAction = newAction;
+                    setAnimation(hadouken);
+                    //System.out.println("H");
+                    Mayflower.playMusic(System.getProperty("user.dir") + "\\src\\main\\resources\\sounds\\petersounds\\peterhadouken.mp3");
+                   
+                    
+                    
+                    
+            }
+        if(isTouching(IceBlock.class))
         {
-            
-            setLocation(getX() - super.getXVelocity(), getY());
-            for(int i = 0; i < 3; i++)
+            if(super.getXVelocity() > 0)
             {
-                if(isTouching(IceBlock.class))
-                {
-                    setLocation(getX() - super.getXVelocity() * 2, getY());
-                }
-                else if(isTouching(Block.class))
-                {
-                    setLocation(getX() - super.getXVelocity(), getY());
-                }
+                facing = 1;
+            }
+            if(super.getXVelocity() < 0)
+            {
+                facing = -1;
+            }
+            if(super.getYVelocity() > 0)
+            {
                 
             }
             
+            for(int i = 0; i < 10; i++)
+            {
+                setLocation(getX() - facing, getY() +1);
+                
+            }
+            super.setXVelocity(0);
+            super.setYVelocity(0);
+        }
+        else if(isTouching(Block.class))
+        {
+            setLocation(getX() - super.getXVelocity(), getY());
             super.setXVelocity(0);
         }
     }
@@ -241,6 +300,7 @@ public class MovableAnimatedActor extends AnimatedActor
         
     void setAnimation(Animation a)
     {
+
         super.setAnimation(a);
     }
 
@@ -285,5 +345,24 @@ public class MovableAnimatedActor extends AnimatedActor
         fallingRight.setBounds(0, 0, 85, 109);
         super.setAnimation(ani);
     }
+    public void setHadoukenAnimation(Animation ani)
+    {
+        hadouken = ani;
+        hadouken.setBounds(0, 0, 113, 111);
+        super.setAnimation(ani);
+        
+    }
+    public void setClimbRightAnimation(Animation ani)
+    {
+        climbRight = ani;
+        climbRight.setBounds(0, 0, 68, 109);
+        super.setAnimation(ani);
+    }
+    public void setClimbLeftAnimation(Animation ani)
+    {
+        climbLeft = ani;
+        climbLeft.setBounds(0, 0, 68, 109);
+        super.setAnimation(ani);
+    }
+    
 }
-

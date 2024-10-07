@@ -4,7 +4,7 @@ import java.util.Random;
 
 public class FallingComet extends Actor {
     private int speed;        // Speed of the comet's fall
-    private int angle;        // Angle of descent for diagonal movement
+    private int angle;        // Angle for diagonal movement
     private Random random;
 
     // Constructor to set speed and angle of the falling comet
@@ -13,19 +13,18 @@ public class FallingComet extends Actor {
         this.angle = angle;
         random = new Random();
         
-        // Set the comet image (make sure to have a suitable image for the comet)
-        setImage(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\animations\\bomb\\dot3.png");  // Replace with your projectile image path  // Replace with your comet image path
+        setImage(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\animations\\bomb\\dot3.png");
     }
 
     // Act method called in every frame
     public void act() {
         // Move the comet diagonally based on speed and angle
-        int deltaX = (int)(speed * Math.cos(Math.toRadians(angle)));
-        int deltaY = (int)(speed * Math.sin(Math.toRadians(angle)));
-        setLocation(getX() + deltaX, getY() + deltaY);
+        int moveX = (int)(speed * Math.cos(Math.toRadians(angle)));
+        int moveY = (int)(speed * Math.sin(Math.toRadians(angle)));
+        setLocation(getX() + moveX, getY() + moveY);
 
-        // Create a trailing particle effect behind the comet
-        createTailEffect();
+        // Create a fading effect behind the comet
+        createFadeEffect();
 
         // Remove the comet if it goes beyond the screen
         if (getY() > getWorld().getHeight() || getX() > getWorld().getWidth()) {
@@ -34,9 +33,9 @@ public class FallingComet extends Actor {
     }
 
     // Method to create a comet tail effect
-    private void createTailEffect() {
-        // Create a fading tail particle and place it behind the comet
-        TailParticle tail = new TailParticle();
+    private void createFadeEffect() {
+        // Create a fading tail effect and place it behind the comet
+        CometTail tail = new CometTail();
         getWorld().addObject(tail, getX(), getY());
     }
 }

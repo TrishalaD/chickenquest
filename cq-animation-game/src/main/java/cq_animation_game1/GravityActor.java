@@ -131,10 +131,7 @@ public class GravityActor extends Actor
         }
         
         tickx++;
-        if(getClass().equals(Bomb.class))
-        	setLocation(getX() + xVelocity, getY() + (yVelocity * 1));
-        else
-        	setLocation(getX() + xVelocity, getY() + (yVelocity * -1));
+        setLocation(getX() + xVelocity, getY() + (yVelocity * -1));
         
         x = getX();
         y = getY();
@@ -227,6 +224,8 @@ public class GravityActor extends Actor
         
     }
     
+    
+
     public void setYVelocity(int amount)
     {
         yVelocity = amount;
@@ -315,6 +314,31 @@ public class GravityActor extends Actor
         return touched;
         
     }
+    
+    public boolean isClimbRight()
+    {
+        setLocation(getX() + 15, getY());
+        if(isTouching(Block.class))
+        {
+            setLocation(getX() - 15, getY());
+            return true;
+        }
+        setLocation(getX() - 15, getY());
+        return false;
+    }
+    
+    public boolean isClimbLeft()
+    {
+        setLocation(getX() - 15, getY());
+        if(isTouching(Block.class))
+        {
+            setLocation(getX() + 15, getY());
+            return true;
+        }
+        setLocation(getX() + 15, getY());
+        return false;
+    }
+    
     boolean isTouchingYarn()
     {
         return isTouching(Yarn.class);
