@@ -59,6 +59,7 @@ public class Chicken extends Actor
             World w = getWorld(); 
             w.removeObject(this);
             c.decreaseHealth(1);
+            Mayflower.playMusic(System.getProperty("user.dir") + "\\src\\main\\resources\\sounds\\petersounds\\peterhurt.mp3");
         }
         if(isTouching(BeamLaser.class))
         {

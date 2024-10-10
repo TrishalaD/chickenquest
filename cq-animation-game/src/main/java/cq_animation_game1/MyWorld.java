@@ -142,6 +142,10 @@ public class MyWorld extends World
             worldNum ++;
             Mayflower.setWorld(new MyWorld(worldNum));
         }
+        else if(cat.getHealth() <= 0)
+        {
+            transitionToGameOver();
+        }
     }
     
     
@@ -720,20 +724,26 @@ public class MyWorld extends World
     }
     
     private void transitionToGameOver() {
-        gameOver = new GameOverScreen();
-        addObject(gameOver,-160, -120);        
-        transitionedToGameOver = true;
+    	if(transitionedToGameOver == false) {
+    		gameOver = new GameOverScreen();
+            addObject(gameOver,0, 0);        
+            transitionedToGameOver = true;	
+    	}
+        
     }
     
     private void transitionToYouWon() {
         // Create a new instance of NewWorld
-        YouWonScreen youWon = new YouWonScreen();
+    	if(transitionedToYouWon == false) {
+    		YouWonScreen youWon = new YouWonScreen();
+            
+            // Set the new world
+    		addObject(youWon,0, 0);
+            
+            // Update transition flag to prevent repeated transitions
+            transitionedToYouWon = true;
+    	}
         
-        // Set the new world
-        Mayflower.setWorld(youWon);
-        
-        // Update transition flag to prevent repeated transitions
-        transitionedToYouWon = true;
     }
         public void addRandomObjects()
     {
@@ -761,10 +771,10 @@ public class MyWorld extends World
         // addObject(w,0,0);
         // Detector d = new Detector();
         // addObject(d,643,634);
-        enemies = new Chicken[1];
-        enemy = new Chicken();
-        enemies[0] = enemy;
-        addObject(enemy, 128 * 2, 128 * 2);
+				/*
+				 * enemies = new Chicken[1]; enemy = new Chicken(); enemies[0] = enemy;
+				 * addObject(enemy, 128 * 2, 128 * 2);
+				 */
         
         
         tilesGrid = new int[60][100];

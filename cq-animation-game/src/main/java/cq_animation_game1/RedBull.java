@@ -25,7 +25,7 @@ public class RedBull extends Block
             setPlace(99999999, 99999999);
             touchedRedBull = true;
             touchedThisRedBull = true;
-            Mayflower.playMusic(System.getProperty("user.dir") + "\\src\\main\\resources\\img\\sounds\\petersounds\\andifeel.mp3");
+            Mayflower.playMusic(System.getProperty("user.dir") + "\\src\\main\\resources\\sounds\\petersounds\\andifeel.mp3");
             
             
             

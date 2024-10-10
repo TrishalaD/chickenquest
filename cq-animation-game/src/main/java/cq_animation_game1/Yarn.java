@@ -20,6 +20,8 @@ public class Yarn extends Actor
           World w = getWorld(); 
           w.removeObject(this);
           c.increaseScore( 1 );
+          Mayflower.playMusic(System.getProperty("user.dir") + "\\src\\main\\resources\\sounds\\petersounds\\peterlaugh.mp3");
+
       }
     }
     
